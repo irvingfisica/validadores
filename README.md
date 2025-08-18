@@ -2,7 +2,7 @@
 
 Estos validadores son un conjunto de herramientas para limpiar, transformar y validar bases de datos.
 
-Para usarlos es necesario [installar Streamlit](https://streamlit.io/#install). 
+Para usarlos es necesario [instalar Streamlit](https://streamlit.io/#install). 
 
 Una vez installado Streamlit se debe ejecutar en la terminal la siguiente línea de código:
 

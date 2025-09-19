@@ -88,6 +88,7 @@ with cols_ui[1]:
 if upload_file is not None:
     try:
         df = pd.read_csv(upload_file, encoding=encoding)
+        df.dropna(how="all").dropna(how="all",axis=1)
 
         st.success("El archivo fue cargado correctamente")
         st.write("Vista previa de los datos:")
@@ -194,3 +195,4 @@ if upload_file is not None:
     except Exception as e:
 
         st.error(f"Error al leer el archivo: {e}")
+

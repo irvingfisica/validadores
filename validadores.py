@@ -29,7 +29,7 @@ def transformar_a_numerica(serie: pd.Series) -> pd.Series:
     serie_limpia = serie.astype(str).str.strip()
     serie_limpia = serie_limpia.str.replace(r'[\$,€]', '', regex=True)
     serie_limpia = serie_limpia.str.replace(",","")
-    serie_limpia = serie_limpia.replace(["","-"," ","NA","N/A","na","nan","null","None"],pd.NA)
+    serie_limpia = serie_limpia.replace(["","-"," ","NA","N/A","ND","nd","*","na","nan","null","None"],pd.NA)
 
     return pd.to_numeric(serie_limpia, errors="raise")
 
@@ -192,4 +192,5 @@ if upload_file is not None:
             
 
     except Exception as e:
+
         st.error(f"Error al leer el archivo: {e}")

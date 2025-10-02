@@ -18,16 +18,18 @@
 ## 🌟 Validador General (recomendado)
  `streamlit run https://raw.githubusercontent.com/irvingfisica/validadores/refs/heads/main/completo.py`
 
-## 🔹 Validador de Columnas
+## Herramientas por separado
+
+### 🔹 Validador de Columnas
  `streamlit run https://raw.githubusercontent.com/irvingfisica/validadores/refs/heads/main/validadores.py`
 
-## ✏️ Editor de Valores
+### ✏️ Editor de Valores
  `streamlit run https://raw.githubusercontent.com/irvingfisica/validadores/refs/heads/main/columnas.py`
 
-## 🔥 Derretidor
+### 🔥 Derretidor
  `streamlit run https://raw.githubusercontent.com/irvingfisica/validadores/refs/heads/main/derretidor.py`
 
-## 📊 Pivoteador
+### 📊 Pivoteador
  `streamlit run https://raw.githubusercontent.com/irvingfisica/validadores/refs/heads/main/pivoteador.py`
 
 ### Recomendaciones
@@ -35,5 +37,6 @@
  - Usa la vista previa antes de promover los cambios en derretido y pivoteado
  - Ejecuta todas las herramientas dentro de un entorno virtual aislado
  - Si eres nuevo, empieza con el Validador General
+
 
 

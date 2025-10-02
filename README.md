@@ -13,8 +13,6 @@
  - Streamlit: https://streamlit.io/#install
  - Se recomienda usar un entorno virtual independiente (venv o conda)
 
- En Conda, para instalar PNDA tools: `conda install -c anaconda git`
-
 # Ejecución de las herramientas
 
 ## 🌟 Validador General (recomendado)
@@ -37,4 +35,5 @@
  - Usa la vista previa antes de promover los cambios en derretido y pivoteado
  - Ejecuta todas las herramientas dentro de un entorno virtual aislado
  - Si eres nuevo, empieza con el Validador General
+
 

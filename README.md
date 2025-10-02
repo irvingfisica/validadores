@@ -1,35 +1,54 @@
-## Validadores
 
-Estos validadores son un conjunto de herramientas para limpiar, transformar y validar bases de datos.
+                                                               
+# 🛠️ Herramientas de limpiado para CSV                               
+                                                               
+ Este repositorio contiene un conjunto de herramientas para   
+ limpiar, transformar y validar bases de datos usando         
+ Streamlit.                                                    
+                                                               
+ El Validador General es la herramienta principal, que        
+ integra funcionalidades de:                                   
+   - Validación de columnas                                    
+   - Edición de valores                                        
+   - Derretido de columnas                                     
+   - Pivoteado de datos                                        
+                                                               
 
-Para usarlos es necesario [instalar Streamlit](https://streamlit.io/#install). 
+## Requisitos
+ - Python con los módulos: pandas, re y hashlib
+ - Streamlit: https://streamlit.io/#install
+ - Se recomienda usar un entorno virtual independiente (venv o conda)
 
-Una vez installado Streamlit se debe ejecutar en la terminal la siguiente línea de código:
+ ⚠️ Para subir archivos a PNDA, necesitas:
+   - VPN activa
+   - Autenticación
+   - Módulos de PNDA tools: https://github.com/irvingfisica/pndatools/tree/main
 
-Para el validador general:
-`streamlit run https://raw.githubusercontent.com/irvingfisica/validadores/refs/heads/main/completo.py` 
+ En Conda, para instalar PNDA tools:
+ conda install -c anaconda git
 
-Para el validador de columnas:
-`streamlit run https://raw.githubusercontent.com/irvingfisica/validadores/refs/heads/main/validadores.py` 
+# Ejecución de las herramientas
 
-Para el editor de valores:
-`streamlit run https://raw.githubusercontent.com/irvingfisica/validadores/refs/heads/main/columnas.py` 
+## 🌟 Validador General (recomendado)
+ streamlit run https://raw.githubusercontent.com/irvingfisica/validadores/refs/heads/main/completo.py
 
-Para el derretidor:
-`streamlit run https://raw.githubusercontent.com/irvingfisica/validadores/refs/heads/main/derretidor.py` 
+## 🔹 Validador de Columnas
+ streamlit run https://raw.githubusercontent.com/irvingfisica/validadores/refs/heads/main/validadores.py
 
-Para el pivoteador:
-`streamlit run https://raw.githubusercontent.com/irvingfisica/validadores/refs/heads/main/pivoteador.py` 
+## ✏️ Editor de Valores
+ streamlit run https://raw.githubusercontent.com/irvingfisica/validadores/refs/heads/main/columnas.py
 
+## 🔥 Derretidor
+ streamlit run https://raw.githubusercontent.com/irvingfisica/validadores/refs/heads/main/derretidor.py
 
-Además hay una herramienta que permite subir datos al repo de la PNDA. (Para poder hacerlo es necesario tener activa la VPN y autenticar el ingreso.)
+## 📊 Pivoteador
+ streamlit run https://raw.githubusercontent.com/irvingfisica/validadores/refs/heads/main/pivoteador.py
 
-Herramienta para subir archivos:
-`streamlit run https://raw.githubusercontent.com/irvingfisica/validadores/refs/heads/main/subir_archivo.py` 
+## ☁️ Subida de Archivos a PNDA
+ streamlit run https://raw.githubusercontent.com/irvingfisica/validadores/refs/heads/main/subir_archivo.py
 
-Para poder ejecutar esta herramienta es necesario instalar los módulos de apoyo que se encuentran en este repo: [PNDA tools](https://github.com/irvingfisica/pndatools/tree/main).
-
-Para todas las herramientas es necesario instalar PANDAS, re y hashlib. Se recomienda hacerlo en un env independiente.
-
-
-En conda para poder instalar las PNDA tools es necesario instalar git en el env. (conda install -c anaconda git)
+### Recomendaciones
+ - Mantén siempre un backup de tus datos antes de aplicar transformaciones
+ - Usa la vista previa antes de promover los cambios en derretido y pivoteado
+ - Ejecuta todas las herramientas dentro de un entorno virtual aislado
+ - Si eres nuevo, empieza con el Validador General

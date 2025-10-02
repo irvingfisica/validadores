@@ -7,7 +7,13 @@ Para usarlos es necesario [instalar Streamlit](https://streamlit.io/#install).
 Una vez installado Streamlit se debe ejecutar en la terminal la siguiente línea de código:
 
 Para el validador general:
+`streamlit run https://raw.githubusercontent.com/irvingfisica/validadores/refs/heads/main/completo.py` 
+
+Para el validador de columnas:
 `streamlit run https://raw.githubusercontent.com/irvingfisica/validadores/refs/heads/main/validadores.py` 
+
+Para el editor de valores:
+`streamlit run https://raw.githubusercontent.com/irvingfisica/validadores/refs/heads/main/columnas.py` 
 
 Para el derretidor:
 `streamlit run https://raw.githubusercontent.com/irvingfisica/validadores/refs/heads/main/derretidor.py` 
@@ -24,5 +30,6 @@ Herramienta para subir archivos:
 Para poder ejecutar esta herramienta es necesario instalar los módulos de apoyo que se encuentran en este repo: [PNDA tools](https://github.com/irvingfisica/pndatools/tree/main).
 
 Para todas las herramientas es necesario instalar PANDAS, re y hashlib. Se recomienda hacerlo en un env independiente.
+
 
 En conda para poder instalar las PNDA tools es necesario instalar git en el env. (conda install -c anaconda git)

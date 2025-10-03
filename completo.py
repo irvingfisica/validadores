@@ -99,12 +99,12 @@ if opcion == "Cargar CSV":
 
     st.markdown("""
     ### ¿Cómo funciona esta herramienta?
-    Aplica las transformaciones que necesites paras que tu base de datos esté más limpia.
+    Aplica las transformaciones que necesites para que tu base de datos esté más limpia.
 
-    - Comienza cargando un archivo y luego selecciona las herramientas de la izquierda.  
+    - Comienza cargando un archivo y luego selecciona las herramientas de la izquierda (no olvides scrollear hacia arriba cada que cambias de herramienta).  
     - Una vez cargado, el sistema **mantiene los datos en memoria** (estado de sesión) para que puedas aplicar varias transformaciones sin perder tu trabajo.  
     - Cada herramienta modifica tus datos y genera una nueva versión sobre la cual puedes seguir aplicando transformaciones.  
-    - Cuando estés conforme con los cambios, puedes exportarlos.  
+    - Cuando estés conforme con los datos transformados puedes exportarlos en la barra de la izquierda. Siempre se exportara en UTF8. 
     - Al cargar un nuevo archivo, **todo el estado se reinicia** y se empieza desde cero.
     """)
 
@@ -150,6 +150,8 @@ if opcion == "Cargar CSV":
     if 'df' in st.session_state:
         st.subheader("Estos son los datos que están cargados actualmente:")
         st.dataframe(st.session_state.df)
+
+        st.subheader("... ahora selecciona herramientas en la barra de la izquierda para aplicar transformaciones...")
 
 
 # -------------------

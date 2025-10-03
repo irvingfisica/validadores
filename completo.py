@@ -96,6 +96,20 @@ opcion = st.sidebar.selectbox("Selecciona la herramienta", herramientas)
 # Sección de carga y exportación
 # -------------------
 if opcion == "Cargar CSV":
+
+    st.markdown("""
+    ### ¿Cómo funciona esta herramienta?
+    Aplica las transformaciones que necesites paras que tu base de datos esté más limpia.
+
+    - Comienza cargando un archivo y luego selecciona las herramientas de la izquierda.  
+    - Una vez cargado, el sistema **mantiene los datos en memoria** (estado de sesión) para que puedas aplicar varias transformaciones sin perder tu trabajo.  
+    - Cada herramienta modifica una **versión de prueba** de los datos.  
+    - Cuando estés conforme con los cambios, puedes exportarlos.  
+    - Al cargar un nuevo archivo, **todo el estado se reinicia** y se empieza desde cero.
+    """)
+
+    st.subheader("Carga un archivo")
+
     cols_ui = st.columns([2,1])
     with cols_ui[0]:
         upload_file = st.file_uploader("Carga un archivo CSV", type=['csv'])
@@ -103,33 +117,57 @@ if opcion == "Cargar CSV":
         encoding = st.text_input("Encoding del archivo:", value="UTF8", help="Si el archivo tiene caracteres extraños, prueba con cp1252, cp850 o Latin1. El archivo de salida siempre será UTF8")
 
     if upload_file is not None:
+        try:
+            df = pd.read_csv(upload_file, encoding=encoding)
+            df = df.dropna(how="all").dropna(how="all", axis=1)
 
-        for key in list(st.session_state.keys()):
-            if key != "upload_file_name":  # opcionalmente mantiene el nombre anterior
-                del st.session_state[key]
+            for key in list(st.session_state.keys()):
+                if key != "upload_file_name": 
+                    del st.session_state[key]
 
         
-        st.session_state.upload_file_name = upload_file.name
-        df = pd.read_csv(upload_file, encoding=encoding)
-        df = df.dropna(how="all").dropna(how="all", axis=1)
-        st.session_state.df = df
-        st.success("Archivo cargado correctamente")
-    
+            st.session_state.upload_file_name = upload_file.name
+        
+            st.session_state.df = df
+            st.success("Archivo cargado correctamente")
+
+        except UnicodeDecodeError as e:
+            st.error(
+                "⚠️ No se pudo leer el archivo con el encoding seleccionado.\n\n"
+                "Prueba con alguno de estos encodings: **cp1252**, **latin1**, **cp850**."
+            )
+        except pd.errors.ParserError as e:
+            st.error(
+                "⚠️ El archivo no parece tener un formato CSV válido.\n\n"
+                "Verifica que el archivo esté separado por comas (,)."
+            )
+        except Exception as e:
+            st.error(
+                f"⚠️ No se pudo leer el archivo. Solo se aceptan archivos CSV.\n\n"
+                f"Error técnico: {e}"
+            )
+
     if 'df' in st.session_state:
         st.subheader("Estos son los datos que están cargados actualmente:")
         st.dataframe(st.session_state.df)
-        csv_bytes = st.session_state.df.to_csv(index=False).encode("utf-8")
-        st.download_button(
-            label="Descargar CSV",
-            data=csv_bytes,
-            file_name=st.session_state.get("upload_file_name","exportado.csv"),
-            mime="text/csv"
-        )
+
 
 # -------------------
 # Validador de Columnas
 # -------------------
 elif opcion == "Validador de Columnas":
+
+    st.markdown("""
+    ### Validador de columnas
+
+    Permite modificar los nombres de las columnas y transformar el tipo de datos de cada una.
+
+    - La herramienta sugiere nombres de columna que puedes editar.  
+    - Permite aplicar transformaciones al texto para manejar mejor mayúsculas y minúsculas.  
+    - Permite corregir valores de cifras para que sean columnas numéricas.  
+
+    """)
+
     if 'df' not in st.session_state:
         st.warning("Carga primero un archivo CSV en la sección 'Cargar / Exportar'")
     else:
@@ -233,6 +271,18 @@ elif opcion == "Validador de Columnas":
 # Editor de Cadenas
 # -------------------
 elif opcion == "Editor de Valores":
+
+    st.markdown("""
+    ### Editor de valores
+
+    Permite aplicar reglas de limpieza sobre los valores dentro de las columnas:
+
+    - Al seleccionar una columna detecta valores similares.  
+    - Permite cambiar un valor por alguno similar o editarlo para generar uno nuevo.  
+    - Se puede usar para corregir valores directamente, poner acentos, cambiar nombres, etc.  
+
+    """)
+
     if 'df' not in st.session_state:
         st.warning("Carga primero un archivo CSV en la sección 'Cargar / Exportar'")
     else:
@@ -316,6 +366,17 @@ elif opcion == "Editor de Valores":
 # Derretidor
 # -------------------
 elif opcion == "Derretidor":
+    st.markdown("""
+    ### Derretidor (Melt)
+
+    Convierte columnas en filas, útil para **normalizar tablas anchas**.  
+
+    Ejemplo:  
+    - Tienes una tabla con las columnas `Enero, Febrero, Marzo` → se derrite en dos columnas: `Mes` y `Valor`.  
+
+    Útil cuando los datos están en formato **wide** y necesitas pasarlos a **long** para análisis estadístico o carga en base de datos.
+    """)
+    
     if 'df' not in st.session_state:
         st.warning("Carga primero un archivo CSV")
     else:
@@ -370,6 +431,17 @@ elif opcion == "Derretidor":
 # Pivoteador
 # -------------------
 elif opcion == "Pivoteador":
+    st.markdown("""
+    ### Pivoteador
+
+    Convierte filas en columnas.  
+
+    Ejemplo:  
+    - Tienes una columna `Mes` con valores `Enero, Febrero, Marzo` → se transforma en columnas `Enero, Febrero, Marzo`.  
+
+    Útil cuando necesitas tablas **resumidas por categorías**.
+    """)
+    
     if 'df' not in st.session_state:
         st.warning("Carga primero un archivo CSV")
     else:

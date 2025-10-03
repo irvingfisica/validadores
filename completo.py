@@ -103,7 +103,7 @@ if opcion == "Cargar CSV":
 
     - Comienza cargando un archivo y luego selecciona las herramientas de la izquierda.  
     - Una vez cargado, el sistema **mantiene los datos en memoria** (estado de sesión) para que puedas aplicar varias transformaciones sin perder tu trabajo.  
-    - Cada herramienta modifica una **versión de prueba** de los datos.  
+    - Cada herramienta modifica tus datos y genera una nueva versión sobre la cual puedes seguir aplicando transformaciones.  
     - Cuando estés conforme con los cambios, puedes exportarlos.  
     - Al cargar un nuevo archivo, **todo el estado se reinicia** y se empieza desde cero.
     """)

@@ -8,12 +8,16 @@
  - Derretido de columnas 
  - Pivoteado de datos
 
+Puedes usar la herramienta en este enlace: https://validadores.streamlit.app/
+
+O puedes usarla en tu compu como servicio local:
+
 ## Requisitos
  - Python con los módulos: pandas, re y hashlib
  - Streamlit: https://streamlit.io/#install
  - Se recomienda usar un entorno virtual independiente (venv o conda)
 
-# Ejecución de las herramientas
+# Ejecución de las herramientas en local
 
 ## 🌟 Validador General (recomendado)
  `streamlit run https://raw.githubusercontent.com/irvingfisica/validadores/refs/heads/main/completo.py`

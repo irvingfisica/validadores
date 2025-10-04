@@ -81,7 +81,7 @@ def inferir_tipo(serie: pd.Series):
 # -------------------
 # Interfaz principal
 # -------------------
-st.title("Herramientas de limpiado para CSV")
+st.title("Herramientas de limpieza para CSV")
 
 herramientas = [
     "Cargar CSV",

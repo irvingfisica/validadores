@@ -294,27 +294,66 @@ elif opcion == "Editor de Valores":
 
         st.subheader("Selecciona una columna para explorar sus valores y modificarlos:")
 
-        text_columns = [c for c in df.columns if df[c].dtype == object or str(df[c].dtype).startswith("string")]
-        if not text_columns:
+        # Detectar columnas de texto
+        all_text_columns = [c for c in df.columns if df[c].dtype == object or str(df[c].dtype).startswith("string")]
+
+        if not all_text_columns:
             st.warning("No hay columnas de texto en el CSV")
         else:
-            col = st.selectbox("Selecciona la columna a editar", text_columns, key="editor_columna")
+            # --- FILTRO por número de valores únicos ---
+            porcentaje_limite = 0.05  # 5% del total de filas
+            limite_absoluto = 500
+            max_unicos = min(int(df.shape[0] * porcentaje_limite), limite_absoluto)
 
-            counts = df[col].value_counts().reset_index()
-            counts.columns = [col, "Frecuencia"]
+            resumen_unicos = []
+            for c in all_text_columns:
+                n_unicos = df[c].nunique(dropna=True)
+                resumen_unicos.append((c, n_unicos))
 
-            threshold = st.slider("Selecciona un valor para el umbral de similitud entre valores", 0.3, 0.99, 0.85, 0.01, key="editor_umbral")
+            # Filtrar columnas que cumplen el límite
+            columnas_filtradas = [c for c, n in resumen_unicos if n <= max_unicos]
 
-            # Calcular sugerencias
-            suggestions = {}
-            for i, row in counts[::-1].iterrows():
-                val = row[col]
-                for j, candidate in counts.iterrows():
-                    if candidate[col] == val:
-                        continue
-                    score = similar(val, candidate[col])
-                    if score >= threshold:
-                        suggestions.setdefault(val, []).append(candidate[col])
+            if not columnas_filtradas:
+                st.warning(f"No hay columnas de texto con menos de {max_unicos} valores únicos. "
+                           "Reduce el tamaño del archivo o ajusta el límite.")
+            else:
+                # Ordenar por número de valores únicos (ascendente)
+                columnas_ordenadas = sorted(
+                    [(c, n) for c, n in resumen_unicos if c in columnas_filtradas],
+                    key=lambda x: x[1]
+                )
+
+                # Mostrar información del filtro
+                st.info(f"Mostrando solo columnas con ≤ {max_unicos} valores únicos (ordenadas de menor a mayor).")
+
+                # Mostrar tabla resumen
+                resumen_df = pd.DataFrame(columnas_ordenadas, columns=["Columna", "Valores únicos"])
+                with st.expander("Ver resumen de columnas filtradas"):
+                    st.table(resumen_df)
+
+                # Crear el selector ordenado
+                col_names = [c for c, _ in columnas_ordenadas]
+                col = st.selectbox("Selecciona la columna a editar", col_names, key="editor_columna")
+
+                counts = df[col].value_counts().reset_index()
+                counts.columns = [col, "Frecuencia"]
+
+                threshold = st.slider(
+                    "Selecciona un valor para el umbral de similitud entre valores",
+                    0.3, 0.99, 0.85, 0.01, key="editor_umbral"
+                )
+
+                # Calcular sugerencias solo sobre columnas pequeñas
+                suggestions = {}
+                for i, row in counts[::-1].iterrows():
+                    val = row[col]
+                    for j, candidate in counts.iterrows():
+                        if candidate[col] == val:
+                            continue
+                        score = similar(val, candidate[col])
+                        if score >= threshold:
+                            suggestions.setdefault(val, []).append(candidate[col])
+
 
             def highlight_similar(val):
                 if val in suggestions:

@@ -3,6 +3,8 @@ import re
 import pandas as pd
 import hashlib
 from difflib import SequenceMatcher
+import time
+from collections import Counter
 
 # -------------------
 # Funciones auxiliares
@@ -96,61 +98,102 @@ opcion = st.sidebar.selectbox("Selecciona la herramienta", herramientas)
 # Sección de carga y exportación
 # -------------------
 if opcion == "Cargar CSV":
-
     st.markdown("""
     ### ¿Cómo funciona esta herramienta?
     Aplica las transformaciones que necesites para que tu base de datos esté más limpia.
 
-    - Comienza cargando un archivo y luego selecciona las herramientas de la izquierda (no olvides scrollear hacia arriba cada que cambias de herramienta).  
-    - Una vez cargado, el sistema **mantiene los datos en memoria** (estado de sesión) para que puedas aplicar varias transformaciones sin perder tu trabajo.  
-    - Cada herramienta modifica tus datos y genera una nueva versión sobre la cual puedes seguir aplicando transformaciones.  
-    - Cuando estés conforme con los datos transformados puedes exportarlos en la barra de la izquierda. Siempre se exportara en UTF8. 
-    - Al cargar un nuevo archivo, **todo el estado se reinicia** y se empieza desde cero.
+    - Comienza cargando un archivo y luego selecciona las herramientas de la izquierda.  
+    - El sistema mantiene los datos en memoria (**session_state**) para aplicar varias transformaciones sin perder trabajo.  
+    - Al cargar un nuevo archivo, **todo el estado se reinicia**.  
     """)
 
     st.subheader("Carga un archivo")
 
-    cols_ui = st.columns([2,1])
+    cols_ui = st.columns([2, 1])
     with cols_ui[0]:
-        upload_file = st.file_uploader("Carga un archivo CSV", type=['csv'])
+        upload_file = st.file_uploader("Carga un archivo CSV", type=['csv'], key="upload_file")
     with cols_ui[1]:
-        encoding = st.text_input("Encoding del archivo:", value="UTF8", help="Si el archivo tiene caracteres extraños, prueba con cp1252, cp850 o Latin1. El archivo de salida siempre será UTF8")
+        encoding = st.text_input(
+            "Encoding del archivo:",
+            value=st.session_state.get("encoding", "UTF8"),
+            help="Si el archivo tiene caracteres extraños, prueba con cp1252, cp850 o Latin1."
+        )
+
+    # Detectar si hay cambio de encoding o nuevo archivo
+    reload_needed = False
+    if "encoding" not in st.session_state:
+        st.session_state.encoding = encoding
+    elif st.session_state.encoding != encoding:
+        st.session_state.encoding = encoding
+        reload_needed = True
 
     if upload_file is not None:
-        try:
-            df = pd.read_csv(upload_file, encoding=encoding)
-            df = df.dropna(how="all").dropna(how="all", axis=1)
+        if reload_needed or "upload_file_name" not in st.session_state or \
+        st.session_state.get("upload_file_name") != upload_file.name:
 
-            for key in list(st.session_state.keys()):
-                if key != "upload_file_name": 
-                    del st.session_state[key]
+            with st.spinner("Procesando archivo..."):
+                start = time.time()
+                try:
+                    # Leer CSV
+                    df = pd.read_csv(upload_file, encoding=encoding)
+                    df = df.dropna(how="all").dropna(how="all", axis=1)
 
-        
-            st.session_state.upload_file_name = upload_file.name
-        
-            st.session_state.df = df
-            st.success("Archivo cargado correctamente")
+                    # Reiniciar estado salvo encoding
+                    for key in list(st.session_state.keys()):
+                        if key not in ["encoding", "upload_file"]:
+                            del st.session_state[key]
 
-        except UnicodeDecodeError as e:
-            st.error(
-                "⚠️ No se pudo leer el archivo con el encoding seleccionado.\n\n"
-                "Prueba con alguno de estos encodings: **cp1252**, **latin1**, **cp850**."
-            )
-        except pd.errors.ParserError as e:
-            st.error(
-                "⚠️ El archivo no parece tener un formato CSV válido.\n\n"
-                "Verifica que el archivo esté separado por comas (,)."
-            )
-        except Exception as e:
-            st.error(
-                f"⚠️ No se pudo leer el archivo. Solo se aceptan archivos CSV.\n\n"
-                f"Error técnico: {e}"
-            )
+                    st.session_state.upload_file_name = upload_file.name
+                    st.session_state.df = df
 
+                    # --- Estadística de caracteres inusuales ---
+                    upload_file.seek(0)
+                    raw_text = upload_file.read().decode(encoding, errors="ignore")
+
+                    conteo = Counter(raw_text)
+                    omitidos = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 \t\r\n")
+                    filtrados = {c: n for c, n in conteo.items() if c not in omitidos}
+
+                    df_chars = pd.DataFrame(sorted(filtrados.items(), key=lambda x: x[1]), columns=["Carácter", "Frecuencia"])
+
+                    if not df_chars.empty:
+                        # Agregar código Unicode y ejemplo de uso
+                        ejemplos = []
+                        for c in df_chars["Carácter"]:
+                            idx = raw_text.find(c)
+                            if idx != -1:
+                                ini = max(0, idx - 10)
+                                fin = min(len(raw_text), idx + 11)
+                                contexto = raw_text[ini:fin].replace("\n", "⏎").replace("\r", "")
+                                ejemplos.append(contexto)
+                            else:
+                                ejemplos.append("(no encontrado)")
+
+                        df_chars["Código Unicode"] = df_chars["Carácter"].apply(lambda c: f"U+{ord(c):04X}")
+                        df_chars["Ejemplo de uso"] = ejemplos
+                        df_chars = df_chars[["Carácter", "Código Unicode", "Frecuencia", "Ejemplo de uso"]]
+
+                        st.subheader("Estadística de caracteres inusuales")
+                        st.write("Estos son los caracteres menos comunes (pueden indicar un encoding incorrecto):")
+                        st.dataframe(df_chars, use_container_width=True)
+                    else:
+                        st.info("No se detectaron caracteres inusuales. El archivo parece estar bien codificado.")
+
+                    elapsed = time.time() - start
+                    st.success(f"Archivo cargado correctamente con encoding **{encoding}** en {elapsed:.2f} segundos.")
+
+                except UnicodeDecodeError:
+                    st.error(f"⚠️ No se pudo leer el archivo con el encoding seleccionado ({encoding}). "
+                            "Prueba con cp1252, latin1 o cp850.")
+                except pd.errors.ParserError:
+                    st.error("⚠️ El archivo no parece tener un formato CSV válido.")
+                except Exception as e:
+                    st.error(f"⚠️ No se pudo leer el archivo. Error técnico: {e}")
+
+    # Mostrar vista previa si el DataFrame ya está cargado
     if 'df' in st.session_state:
-        st.subheader("Estos son los datos que están cargados actualmente:")
+        st.subheader("Vista previa de los datos cargados:")
         st.dataframe(st.session_state.df)
-
         st.subheader("... ahora selecciona herramientas en la barra de la izquierda para aplicar transformaciones...")
 
 

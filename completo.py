@@ -445,8 +445,10 @@ elif opcion == "Editor de Valores":
         else:
             # --- FILTRO por número de valores únicos ---
             porcentaje_limite = 0.05  # 5% del total de filas
-            limite_absoluto = 500
+            limite_absoluto = 300
             max_unicos = min(int(df.shape[0] * porcentaje_limite), limite_absoluto)
+            if df.shape[0] < limite_absoluto:
+                max_unicos = df.shape[0]
 
             resumen_unicos = []
             for c in all_text_columns:

@@ -6,69 +6,112 @@ from difflib import SequenceMatcher
 import time
 from collections import Counter
 
+
 # -------------------
 # Funciones auxiliares
 # -------------------
 def similar(a, b):
     return SequenceMatcher(None, a, b).ratio()
 
+
 def transformar_a_texto(serie: pd.Series) -> pd.Series:
     return serie.fillna("sin dato").astype(str).str.strip()
+
 
 def transformar_a_texto_minusculas(serie: pd.Series) -> pd.Series:
     return serie.fillna("sin dato").astype(str).str.strip().str.lower()
 
+
 def transformar_a_texto_capitalizar(serie: pd.Series) -> pd.Series:
     new_ser = serie.fillna("sin dato").astype(str).str.strip().str.title()
-    new_ser = new_ser.str.replace(" De "," de ").str.replace(" Del "," del ")
-    new_ser = new_ser.str.replace(" Y "," y ").str.replace(" El "," el ")
-    new_ser = new_ser.str.replace(" La "," la ").str.replace(" A "," a ")
-    new_ser = new_ser.str.replace(" En "," en ")
+    new_ser = new_ser.str.replace(" De ", " de ").str.replace(" Del ", " del ")
+    new_ser = new_ser.str.replace(" Y ", " y ").str.replace(" El ", " el ")
+    new_ser = new_ser.str.replace(" La ", " la ").str.replace(" A ", " a ")
+    new_ser = new_ser.str.replace(" En ", " en ")
     return new_ser
 
+
 def anonimizar(serie: pd.Series) -> pd.Series:
-    return serie.apply(lambda x: hashlib.sha256(str(x).encode()).hexdigest())
+    return (
+        serie.fillna("")
+        .astype(str)
+        .str.strip()
+        .apply(
+            lambda x: hashlib.sha256(x.encode()).hexdigest() if x != "" else "Sin dato"
+        )
+    )
+
 
 def transformar_a_numerica(serie: pd.Series) -> pd.Series:
     serie_limpia = serie.astype(str).str.strip()
-    serie_limpia = serie_limpia.str.replace(r'[\$,€]', '', regex=True)
-    serie_limpia = serie_limpia.str.replace(",","")
-    serie_limpia = serie_limpia.replace(["","-"," ","NA","N/A","ND","nd","*","na","nan","null","None"],pd.NA)
+    serie_limpia = serie_limpia.str.replace(r"[\$,€]", "", regex=True)
+    serie_limpia = serie_limpia.str.replace(",", "")
+    serie_limpia = serie_limpia.replace(
+        ["", "-", " ", "NA", "N/A", "ND", "nd", "*", "na", "nan", "null", "None"], pd.NA
+    )
 
     return pd.to_numeric(serie_limpia, errors="raise")
+
 
 def transformar_a_numerica_coordenada(serie: pd.Series) -> pd.Series:
     serie_limpia = serie.astype(str).str.strip()
-    serie_limpia = serie_limpia.replace(["","-"," ","NA","N/A","na","nan","null","None"],0.0)
+    serie_limpia = serie_limpia.replace(
+        ["", "-", " ", "NA", "N/A", "na", "nan", "null", "None"], 0.0
+    )
 
     return pd.to_numeric(serie_limpia, errors="raise")
 
+
 def transformar_a_fecha(serie: pd.Series) -> pd.Series:
     serie_limpia = serie.astype(str).str.strip()
-    serie_limpia = serie_limpia.str.replace(r'[/.\s]','-',regex = True)
+    serie_limpia = serie_limpia.str.replace(r"[/.\s]", "-", regex=True)
 
     serie_limpia = serie_limpia.replace(
-        ["", " ", "NaT", "nan", "None", "null", "NA", "N/A"], 
-        pd.NaT
+        ["", " ", "NaT", "nan", "None", "null", "NA", "N/A"], pd.NaT
     )
 
     try:
-        return pd.to_datetime(serie_limpia,format="%d-%m-%Y", errors="raise")
+        return pd.to_datetime(serie_limpia, format="%d-%m-%Y", errors="raise")
     except ValueError:
         return pd.to_datetime(serie_limpia, format="%Y-%m-%d", errors="raise")
-    
+
+
 def sugerir_nombre(columna):
     newcol = columna.lower().strip()
-    newcol = newcol.replace("\n","_")
-    newcol = newcol.replace("_1","_01")
-    newcol = newcol.replace("ñ","ni")
-    newcol = newcol.replace(",","").replace(".","").replace(";","").replace(":","_").replace("/","_")
-    newcol = newcol.replace(" ","_").replace("-","_")
-    newcol = newcol.replace("á","a").replace("é","e").replace("í","i").replace("ó","o").replace("ú","u")
-    newcol = newcol.replace("_de_","_").replace("_del_","_").replace("_a_","_").replace("_por_","_").replace("_en_","_")
-    newcol = newcol.replace("_la_","_").replace("_el_","_").replace("_los_","_").replace("_las_","_")
-    newcol = re.sub(r'_+','_',newcol)
+    newcol = newcol.replace("\n", "_")
+    newcol = newcol.replace("_1", "_01")
+    newcol = newcol.replace("ñ", "ni")
+    newcol = (
+        newcol.replace(",", "")
+        .replace(".", "")
+        .replace(";", "")
+        .replace(":", "_")
+        .replace("/", "_")
+    )
+    newcol = newcol.replace(" ", "_").replace("-", "_")
+    newcol = (
+        newcol.replace("á", "a")
+        .replace("é", "e")
+        .replace("í", "i")
+        .replace("ó", "o")
+        .replace("ú", "u")
+    )
+    newcol = (
+        newcol.replace("_de_", "_")
+        .replace("_del_", "_")
+        .replace("_a_", "_")
+        .replace("_por_", "_")
+        .replace("_en_", "_")
+    )
+    newcol = (
+        newcol.replace("_la_", "_")
+        .replace("_el_", "_")
+        .replace("_los_", "_")
+        .replace("_las_", "_")
+    )
+    newcol = re.sub(r"_+", "_", newcol)
     return newcol
+
 
 def inferir_tipo(serie: pd.Series):
     dtype = df[col].dtype
@@ -80,6 +123,7 @@ def inferir_tipo(serie: pd.Series):
         sugerido = "texto"
     return sugerido
 
+
 # -------------------
 # Interfaz principal
 # -------------------
@@ -90,7 +134,7 @@ herramientas = [
     "Validador de Columnas",
     "Editor de Valores",
     "Derretidor",
-    "Pivoteador"
+    "Pivoteador",
 ]
 opcion = st.sidebar.selectbox("Selecciona la herramienta", herramientas)
 
@@ -102,118 +146,150 @@ if opcion == "Cargar CSV":
     ### ¿Cómo funciona esta herramienta?
     Aplica las transformaciones que necesites para que tu base de datos esté más limpia.
 
-    - Comienza cargando un archivo y luego selecciona las herramientas de la izquierda.  
-    - El sistema mantiene los datos en memoria (**session_state**) para aplicar varias transformaciones sin perder trabajo.  
-    - Al cargar un nuevo archivo, **todo el estado se reinicia**.  
+    - Comienza cargando un archivo y luego selecciona las herramientas de la izquierda.
+    - El sistema mantiene los datos en memoria (**session_state**) para aplicar varias transformaciones sin perder trabajo.
+    - Al cargar un nuevo archivo o cambiar el encoding, **todo el estado se reinicia**.
     """)
 
     st.subheader("Carga un archivo")
 
-    cols_ui = st.columns([2, 1])
-    with cols_ui[0]:
-        upload_file = st.file_uploader("Carga un archivo CSV", type=['csv'], key="upload_file")
-    with cols_ui[1]:
-        encoding = st.text_input(
-            "Encoding del archivo:",
-            value=st.session_state.get("encoding", "UTF8"),
-            help="Si el archivo tiene caracteres extraños, prueba con cp1252, cp850 o Latin1."
+    # --- Warning visible y claro ---
+    st.warning(
+        "⚠️ Si cambias el archivo o el encoding se reseteará el estado y todos tus cambios pueden perderse. "
+        "Si el archivo que vas a cargar es nuevo no tienes de qué preocuparte."
+    )
+
+    # --- Inicialización segura ---
+    if "encoding" not in st.session_state:
+        st.session_state["encoding"] = "UTF8"
+    if "_reload_now" not in st.session_state:
+        st.session_state["_reload_now"] = False
+
+    col1, col2 = st.columns([2, 1])
+
+    with col1:
+        st.file_uploader(
+            "Carga un archivo CSV",
+            type=["csv"],
+            key="upload_file",
+            on_change=lambda: st.session_state.update({"_reload_now": True}),
         )
 
-    # Detectar si hay cambio de encoding o nuevo archivo
-    reload_needed = False
-    if "encoding" not in st.session_state:
-        st.session_state.encoding = encoding
-    elif st.session_state.encoding != encoding:
-        st.session_state.encoding = encoding
-        reload_needed = True
+    with col2:
+        st.text_input(
+            "Encoding del archivo:",
+            key="encoding",
+            help="Si el archivo tiene caracteres extraños, prueba con cp1252, cp850 o Latin1.",
+            on_change=lambda: st.session_state.update({"_reload_now": True}),
+        )
 
-    if upload_file is not None:
-        if reload_needed or "upload_file_name" not in st.session_state or \
-        st.session_state.get("upload_file_name") != upload_file.name:
+    # --- Función central para cargar ---
+    def cargar_csv_actual(archivo_obj, encoding_val):
+        with st.spinner("Procesando archivo..."):
+            start = time.time()
+            try:
+                archivo_obj.seek(0)
+                df_local = pd.read_csv(archivo_obj, encoding=encoding_val)
+                df_local = df_local.dropna(how="all").dropna(how="all", axis=1)
 
-            with st.spinner("Procesando archivo..."):
-                start = time.time()
-                try:
-                    # Leer CSV
-                    df = pd.read_csv(upload_file, encoding=encoding)
-                    df = df.dropna(how="all").dropna(how="all", axis=1)
+                # Resetear estado pero conservar encoding y upload_file
+                for k in list(st.session_state.keys()):
+                    if k not in ["encoding", "upload_file", "upload_file_name"]:
+                        del st.session_state[k]
 
-                    # Reiniciar estado salvo encoding
-                    for key in list(st.session_state.keys()):
-                        if key not in ["encoding", "upload_file"]:
-                            del st.session_state[key]
+                st.session_state["upload_file_name"] = archivo_obj.name
+                st.session_state["df"] = df_local
 
-                    st.session_state.upload_file_name = upload_file.name
-                    st.session_state.df = df
+                # --- Estadística de caracteres inusuales ---
+                archivo_obj.seek(0)
+                raw_text = archivo_obj.read().decode(encoding_val, errors="ignore")
 
-                    # --- Estadística de caracteres inusuales ---
-                    upload_file.seek(0)
-                    raw_text = upload_file.read().decode(encoding, errors="ignore")
+                conteo = Counter(raw_text)
+                omitidos = set(
+                    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789()_-, \t\r\n"
+                )
+                filtrados = {c: n for c, n in conteo.items() if c not in omitidos}
 
-                    conteo = Counter(raw_text)
-                    omitidos = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 \t\r\n")
-                    filtrados = {c: n for c, n in conteo.items() if c not in omitidos}
+                if filtrados:
+                    df_chars = pd.DataFrame(
+                        sorted(filtrados.items(), key=lambda x: x[1]),
+                        columns=["Carácter", "Frecuencia"],
+                    )
+                    df_chars["Código Unicode"] = df_chars["Carácter"].apply(
+                        lambda c: f"U+{ord(c):04X}"
+                    )
+                    ejemplos = []
+                    for c in df_chars["Carácter"]:
+                        idx = raw_text.find(c)
+                        if idx != -1:
+                            ini, fin = max(0, idx - 10), min(len(raw_text), idx + 11)
+                            ejemplos.append(
+                                raw_text[ini:fin].replace("\n", "⏎").replace("\r", "")
+                            )
+                        else:
+                            ejemplos.append("(no encontrado)")
+                    df_chars["Ejemplo de uso"] = ejemplos
 
-                    df_chars = pd.DataFrame(sorted(filtrados.items(), key=lambda x: x[1]), columns=["Carácter", "Frecuencia"])
+                    st.subheader("Estadística de caracteres inusuales")
+                    st.write(
+                        "Estos son los caracteres menos comunes (pueden indicar un encoding incorrecto):"
+                    )
+                    st.dataframe(df_chars, use_container_width=True)
+                else:
+                    st.info(
+                        "No se detectaron caracteres inusuales. El archivo parece estar bien codificado."
+                    )
 
-                    if not df_chars.empty:
-                        # Agregar código Unicode y ejemplo de uso
-                        ejemplos = []
-                        for c in df_chars["Carácter"]:
-                            idx = raw_text.find(c)
-                            if idx != -1:
-                                ini = max(0, idx - 10)
-                                fin = min(len(raw_text), idx + 11)
-                                contexto = raw_text[ini:fin].replace("\n", "⏎").replace("\r", "")
-                                ejemplos.append(contexto)
-                            else:
-                                ejemplos.append("(no encontrado)")
+                st.success(
+                    f"Archivo cargado correctamente con encoding **{encoding_val}** en {time.time() - start:.2f} s."
+                )
 
-                        df_chars["Código Unicode"] = df_chars["Carácter"].apply(lambda c: f"U+{ord(c):04X}")
-                        df_chars["Ejemplo de uso"] = ejemplos
-                        df_chars = df_chars[["Carácter", "Código Unicode", "Frecuencia", "Ejemplo de uso"]]
+            except UnicodeDecodeError:
+                st.session_state.pop("df", None)
+                st.error(
+                    f"⚠️ No se pudo leer con encoding {encoding_val}. Prueba con cp1252, latin1 o cp850."
+                )
+            except pd.errors.ParserError:
+                st.session_state.pop("df", None)
+                st.error("⚠️ El archivo no parece tener un formato CSV válido.")
+            except Exception as e:
+                st.session_state.pop("df", None)
+                st.error(f"⚠️ No se pudo leer el archivo. Error técnico: {e}")
 
-                        st.subheader("Estadística de caracteres inusuales")
-                        st.write("Estos son los caracteres menos comunes (pueden indicar un encoding incorrecto):")
-                        st.dataframe(df_chars, use_container_width=True)
-                    else:
-                        st.info("No se detectaron caracteres inusuales. El archivo parece estar bien codificado.")
+    # --- Lógica de recarga ---
+    if st.session_state["_reload_now"]:
+        file = st.session_state.get("upload_file")
+        enc = st.session_state.get("encoding", "UTF8")
+        if file:
+            cargar_csv_actual(file, enc)
+        else:
+            st.info("No hay archivo seleccionado.")
+        st.session_state["_reload_now"] = False
 
-                    elapsed = time.time() - start
-                    st.success(f"Archivo cargado correctamente con encoding **{encoding}** en {elapsed:.2f} segundos.")
-
-                except UnicodeDecodeError:
-                    st.error(f"⚠️ No se pudo leer el archivo con el encoding seleccionado ({encoding}). "
-                            "Prueba con cp1252, latin1 o cp850.")
-                except pd.errors.ParserError:
-                    st.error("⚠️ El archivo no parece tener un formato CSV válido.")
-                except Exception as e:
-                    st.error(f"⚠️ No se pudo leer el archivo. Error técnico: {e}")
-
-    # Mostrar vista previa si el DataFrame ya está cargado
-    if 'df' in st.session_state:
+    # --- Vista previa ---
+    if "df" in st.session_state:
         st.subheader("Vista previa de los datos cargados:")
         st.dataframe(st.session_state.df)
-        st.subheader("... ahora selecciona herramientas en la barra de la izquierda para aplicar transformaciones...")
-
+        st.subheader(
+            "... ahora selecciona herramientas en la barra lateral para aplicar transformaciones ..."
+        )
 
 # -------------------
 # Validador de Columnas
 # -------------------
 elif opcion == "Validador de Columnas":
-
     st.markdown("""
     ### Validador de columnas
 
     Permite modificar los nombres de las columnas y transformar el tipo de datos de cada una.
 
-    - La herramienta sugiere nombres de columna que puedes editar.  
-    - Permite aplicar transformaciones al texto para manejar mejor mayúsculas y minúsculas.  
-    - Permite corregir valores de cifras para que sean columnas numéricas.  
+    - La herramienta sugiere nombres de columna que puedes editar.
+    - Permite aplicar transformaciones al texto para manejar mejor mayúsculas y minúsculas.
+    - Permite corregir valores de cifras para que sean columnas numéricas.
 
     """)
 
-    if 'df' not in st.session_state:
+    if "df" not in st.session_state:
         st.warning("Carga primero un archivo CSV en la sección 'Cargar / Exportar'")
     else:
         df = st.session_state.df.copy()
@@ -223,33 +299,46 @@ elif opcion == "Validador de Columnas":
 
         configuracion = {}
 
-        st.subheader("Escribe los nombres de columna deseados y selecciona el tipo de dato para cada columna:")
+        st.subheader(
+            "Escribe los nombres de columna deseados y selecciona el tipo de dato para cada columna:"
+        )
 
         for idx, col in enumerate(df.columns):
             tipo_sugerido = inferir_tipo(df[col])
             nombre_sugerido = sugerir_nombre(col)
 
-            cols_ui = st.columns([2,1])
+            cols_ui = st.columns([2, 1])
             with cols_ui[0]:
-                nuevo_nombre = st.text_input(f"Nombre para '{col}'",
-                                             value=nombre_sugerido,
-                                             key=f"nombre_{idx}_{col}")
+                nuevo_nombre = st.text_input(
+                    f"Nombre para '{col}'",
+                    value=nombre_sugerido,
+                    key=f"nombre_{idx}_{col}",
+                )
             with cols_ui[1]:
-                tipo = st.selectbox("Tipo de datos:",
-                                    options=[
-                                        "texto",
-                                        "texto | minusculas",
-                                        "texto | capitalizado",
-                                        "numerica",
-                                        "numerica | coordenada",
-                                        "fecha",
-                                        "anonimizar",
-                                        "eliminar columna"
-                                    ],
-                                    index=["texto","texto | minusculas","texto | capitalizado",
-                                           "numerica","numerica | coordenada","fecha",
-                                           "anonimizar","eliminar columna"].index(tipo_sugerido),
-                                    key=f"tipo_{idx}_{col}")
+                tipo = st.selectbox(
+                    "Tipo de datos:",
+                    options=[
+                        "texto",
+                        "texto | minusculas",
+                        "texto | capitalizado",
+                        "numerica",
+                        "numerica | coordenada",
+                        "fecha",
+                        "anonimizar",
+                        "eliminar columna",
+                    ],
+                    index=[
+                        "texto",
+                        "texto | minusculas",
+                        "texto | capitalizado",
+                        "numerica",
+                        "numerica | coordenada",
+                        "fecha",
+                        "anonimizar",
+                        "eliminar columna",
+                    ].index(tipo_sugerido),
+                    key=f"tipo_{idx}_{col}",
+                )
             configuracion[col] = {"nuevo_nombre": nuevo_nombre, "tipo": tipo}
 
         if st.button("Aplicar transformaciones", key="btn_validador"):
@@ -283,11 +372,19 @@ elif opcion == "Validador de Columnas":
                     fallidas.append(conf["nuevo_nombre"])
 
             # Renombrar columnas
-            nuevos_nombres = {col: conf["nuevo_nombre"] for col, conf in configuracion.items() if conf["tipo"] != "eliminar columna"}
+            nuevos_nombres = {
+                col: conf["nuevo_nombre"]
+                for col, conf in configuracion.items()
+                if conf["tipo"] != "eliminar columna"
+            }
             df_trans.rename(columns=nuevos_nombres, inplace=True)
 
             # Eliminar columnas
-            eliminar = [col for col, conf in configuracion.items() if conf["tipo"] == "eliminar columna"]
+            eliminar = [
+                col
+                for col, conf in configuracion.items()
+                if conf["tipo"] == "eliminar columna"
+            ]
             df_trans.drop(columns=eliminar, inplace=True)
 
             # Guardar en session_state
@@ -316,19 +413,18 @@ elif opcion == "Validador de Columnas":
 # Editor de Cadenas
 # -------------------
 elif opcion == "Editor de Valores":
-
     st.markdown("""
     ### Editor de valores
 
     Permite aplicar reglas de limpieza sobre los valores dentro de las columnas:
 
-    - Al seleccionar una columna detecta valores similares.  
-    - Permite cambiar un valor por alguno similar o editarlo para generar uno nuevo.  
-    - Se puede usar para corregir valores directamente, poner acentos, cambiar nombres, etc.  
+    - Al seleccionar una columna detecta valores similares.
+    - Permite cambiar un valor por alguno similar o editarlo para generar uno nuevo.
+    - Se puede usar para corregir valores directamente, poner acentos, cambiar nombres, etc.
 
     """)
 
-    if 'df' not in st.session_state:
+    if "df" not in st.session_state:
         st.warning("Carga primero un archivo CSV en la sección 'Cargar / Exportar'")
     else:
         df = st.session_state.df.copy()
@@ -338,7 +434,11 @@ elif opcion == "Editor de Valores":
         st.subheader("Selecciona una columna para explorar sus valores y modificarlos:")
 
         # Detectar columnas de texto
-        all_text_columns = [c for c in df.columns if df[c].dtype == object or str(df[c].dtype).startswith("string")]
+        all_text_columns = [
+            c
+            for c in df.columns
+            if df[c].dtype == object or str(df[c].dtype).startswith("string")
+        ]
 
         if not all_text_columns:
             st.warning("No hay columnas de texto en el CSV")
@@ -357,33 +457,45 @@ elif opcion == "Editor de Valores":
             columnas_filtradas = [c for c, n in resumen_unicos if n <= max_unicos]
 
             if not columnas_filtradas:
-                st.warning(f"No hay columnas de texto con menos de {max_unicos} valores únicos. "
-                           "Reduce el tamaño del archivo o ajusta el límite.")
+                st.warning(
+                    f"No hay columnas de texto con menos de {max_unicos} valores únicos. "
+                    "Reduce el tamaño del archivo o ajusta el límite."
+                )
             else:
                 # Ordenar por número de valores únicos (ascendente)
                 columnas_ordenadas = sorted(
                     [(c, n) for c, n in resumen_unicos if c in columnas_filtradas],
-                    key=lambda x: x[1]
+                    key=lambda x: x[1],
                 )
 
                 # Mostrar información del filtro
-                st.info(f"Mostrando solo columnas con ≤ {max_unicos} valores únicos (ordenadas de menor a mayor).")
+                st.info(
+                    f"Mostrando solo columnas con ≤ {max_unicos} valores únicos (ordenadas de menor a mayor)."
+                )
 
                 # Mostrar tabla resumen
-                resumen_df = pd.DataFrame(columnas_ordenadas, columns=["Columna", "Valores únicos"])
+                resumen_df = pd.DataFrame(
+                    columnas_ordenadas, columns=["Columna", "Valores únicos"]
+                )
                 with st.expander("Ver resumen de columnas filtradas"):
                     st.table(resumen_df)
 
                 # Crear el selector ordenado
                 col_names = [c for c, _ in columnas_ordenadas]
-                col = st.selectbox("Selecciona la columna a editar", col_names, key="editor_columna")
+                col = st.selectbox(
+                    "Selecciona la columna a editar", col_names, key="editor_columna"
+                )
 
                 counts = df[col].value_counts().reset_index()
                 counts.columns = [col, "Frecuencia"]
 
                 threshold = st.slider(
                     "Selecciona un valor para el umbral de similitud entre valores",
-                    0.3, 0.99, 0.85, 0.01, key="editor_umbral"
+                    0.3,
+                    0.99,
+                    0.85,
+                    0.01,
+                    key="editor_umbral",
                 )
 
                 # Calcular sugerencias solo sobre columnas pequeñas
@@ -397,16 +509,19 @@ elif opcion == "Editor de Valores":
                         if score >= threshold:
                             suggestions.setdefault(val, []).append(candidate[col])
 
-
             def highlight_similar(val):
                 if val in suggestions:
                     return "background-color: #ffcccc"
                 return "background-color: #ccffcc"
 
-            st.markdown("Los valores en rojo son similares a otros en la columna, revísalos:")
+            st.markdown(
+                "Los valores en rojo son similares a otros en la columna, revísalos:"
+            )
             st.dataframe(counts.style.applymap(highlight_similar, subset=[col]))
 
-            st.markdown("### Corrige los valores que desees cambiar, puedes usar otros valores o escribir un nuevo valor")
+            st.markdown(
+                "### Corrige los valores que desees cambiar, puedes usar otros valores o escribir un nuevo valor"
+            )
             edited = {}
 
             for i, row in counts.iterrows():
@@ -416,9 +531,16 @@ elif opcion == "Editor de Valores":
 
                 c1, c2 = st.columns([2, 3])
                 with c1:
-                    selected = st.selectbox(f"{val} ({freq} veces)", options, index=0, key=f"selector_{col}_{i}")
+                    selected = st.selectbox(
+                        f"{val} ({freq} veces)",
+                        options,
+                        index=0,
+                        key=f"selector_{col}_{i}",
+                    )
                 with c2:
-                    new_val = st.text_input("Editar valor", value=selected, key=f"text_{col}_{i}")
+                    new_val = st.text_input(
+                        "Editar valor", value=selected, key=f"text_{col}_{i}"
+                    )
                 edited[val] = new_val
 
             if st.button("Aplicar cambios", key="editor_aplicar"):
@@ -432,13 +554,21 @@ elif opcion == "Editor de Valores":
 
                 st.subheader("Reporte de cambios aplicados")
                 if total_cambios > 0:
-                    st.success(f"Se aplicaron {total_cambios} cambios en la columna `{col}`.")
+                    st.success(
+                        f"Se aplicaron {total_cambios} cambios en la columna `{col}`."
+                    )
                     resumen = []
                     for old_val, new_val in edited.items():
                         if old_val != new_val:
                             reemplazos = ((before == old_val) & mask).sum()
                             if reemplazos > 0:
-                                resumen.append({"Valor original": old_val, "Nuevo valor": new_val, "Reemplazos": reemplazos})
+                                resumen.append(
+                                    {
+                                        "Valor original": old_val,
+                                        "Nuevo valor": new_val,
+                                        "Reemplazos": reemplazos,
+                                    }
+                                )
                     st.table(pd.DataFrame(resumen))
                 else:
                     st.info("No se realizaron cambios en esta columna.")
@@ -453,15 +583,15 @@ elif opcion == "Derretidor":
     st.markdown("""
     ### Derretidor (Melt)
 
-    Convierte columnas en filas, útil para **normalizar tablas anchas**.  
+    Convierte columnas en filas, útil para **normalizar tablas anchas**.
 
-    Ejemplo:  
-    - Tienes una tabla con las columnas `Enero, Febrero, Marzo` → se derrite en dos columnas: `Mes` y `Valor`.  
+    Ejemplo:
+    - Tienes una tabla con las columnas `Enero, Febrero, Marzo` → se derrite en dos columnas: `Mes` y `Valor`.
 
     Útil cuando los datos están en formato **wide** y necesitas pasarlos a **long** para análisis estadístico o carga en base de datos.
     """)
-    
-    if 'df' not in st.session_state:
+
+    if "df" not in st.session_state:
         st.warning("Carga primero un archivo CSV")
     else:
         df = st.session_state.df.copy()
@@ -474,41 +604,56 @@ elif opcion == "Derretidor":
         for col in df.columns:
             seleccion = st.selectbox(
                 f"Columna: {col}",
-                options = ["identificador","valor","eliminar"],
-                index = 0
+                options=["identificador", "valor", "eliminar"],
+                index=0,
             )
             configuracion[col] = seleccion
-        
+
         st.write("Define los nombres de las columnas a crear")
-        cols_ui = st.columns([2,1])
+        cols_ui = st.columns([2, 1])
         with cols_ui[0]:
-            var_name = st.text_input("Nombre para la columna de variables:", value="categorias")
+            var_name = st.text_input(
+                "Nombre para la columna de variables:", value="categorias"
+            )
         with cols_ui[1]:
-            value_name = st.text_input("Nombre para la columna de valores:", value="valor")
-            
+            value_name = st.text_input(
+                "Nombre para la columna de valores:", value="valor"
+            )
+
         # Botón para generar vista previa
         if st.button("Transformar"):
-            id_vars = [col for col,value in configuracion.items() if value == "identificador"]
-            value_vars = [col for col,value in configuracion.items() if value == "valor"]
+            id_vars = [
+                col for col, value in configuracion.items() if value == "identificador"
+            ]
+            value_vars = [
+                col for col, value in configuracion.items() if value == "valor"
+            ]
 
-            df_melted = pd.melt(df, id_vars=id_vars, value_vars=value_vars,
-                                var_name=var_name, value_name=value_name)
-            st.session_state['derretidor_preview'] = df_melted  # << guarda en session_state
+            df_melted = pd.melt(
+                df,
+                id_vars=id_vars,
+                value_vars=value_vars,
+                var_name=var_name,
+                value_name=value_name,
+            )
+            st.session_state["derretidor_preview"] = (
+                df_melted  # << guarda en session_state
+            )
 
         # Mostrar preview si existe
-        if 'derretidor_preview' in st.session_state:
+        if "derretidor_preview" in st.session_state:
             st.write("Vista previa después de derretir las columnas:")
-            st.dataframe(st.session_state['derretidor_preview'])
+            st.dataframe(st.session_state["derretidor_preview"])
 
-            c1, c2 = st.columns([1,1])
+            c1, c2 = st.columns([1, 1])
             with c1:
                 if st.button("Promover cambio"):
-                    st.session_state.df = st.session_state['derretidor_preview']
-                    del st.session_state['derretidor_preview']
+                    st.session_state.df = st.session_state["derretidor_preview"]
+                    del st.session_state["derretidor_preview"]
                     st.success("Cambio promovido al frame principal.")
             with c2:
                 if st.button("Descartar vista previa"):
-                    del st.session_state['derretidor_preview']
+                    del st.session_state["derretidor_preview"]
                     st.info("Vista previa descartada.")
 
 # -------------------
@@ -518,15 +663,15 @@ elif opcion == "Pivoteador":
     st.markdown("""
     ### Pivoteador
 
-    Convierte filas en columnas.  
+    Convierte filas en columnas.
 
-    Ejemplo:  
-    - Tienes una columna `Mes` con valores `Enero, Febrero, Marzo` → se transforma en columnas `Enero, Febrero, Marzo`.  
+    Ejemplo:
+    - Tienes una columna `Mes` con valores `Enero, Febrero, Marzo` → se transforma en columnas `Enero, Febrero, Marzo`.
 
     Útil cuando necesitas tablas **resumidas por categorías**.
     """)
-    
-    if 'df' not in st.session_state:
+
+    if "df" not in st.session_state:
         st.warning("Carga primero un archivo CSV")
     else:
         df = st.session_state.df.copy()
@@ -539,49 +684,54 @@ elif opcion == "Pivoteador":
         for col in df.columns:
             seleccion = st.selectbox(
                 f"Columna: {col}",
-                options = ["identificador","columnas","valores","eliminar"],
-                index = 0
+                options=["identificador", "columnas", "valores", "eliminar"],
+                index=0,
             )
             configuracion[col] = seleccion
 
         # Botón para generar vista previa
         if st.button("Transformar"):
-            index = [col for col,value in configuracion.items() if value == "identificador"]
-            columns = [col for col,value in configuracion.items() if value == "columnas"]
-            values = [col for col,value in configuracion.items() if value == "valores"]
+            index = [
+                col for col, value in configuracion.items() if value == "identificador"
+            ]
+            columns = [
+                col for col, value in configuracion.items() if value == "columnas"
+            ]
+            values = [col for col, value in configuracion.items() if value == "valores"]
 
             df_pivot = pd.pivot(df, index=index, columns=columns, values=values)
-            df_pivot.columns = ['_'.join(column) for column in df_pivot.columns.to_flat_index()]
+            df_pivot.columns = [
+                "_".join(column) for column in df_pivot.columns.to_flat_index()
+            ]
             df_pivot = df_pivot.reset_index()
 
-            st.session_state['pivoteador_preview'] = df_pivot  # << guarda en session_state
+            st.session_state["pivoteador_preview"] = (
+                df_pivot  # << guarda en session_state
+            )
 
         # Mostrar preview si existe
-        if 'pivoteador_preview' in st.session_state:
+        if "pivoteador_preview" in st.session_state:
             st.write("Vista previa después de pivotear las columnas:")
-            st.dataframe(st.session_state['pivoteador_preview'])
+            st.dataframe(st.session_state["pivoteador_preview"])
 
-            c1, c2 = st.columns([1,1])
+            c1, c2 = st.columns([1, 1])
             with c1:
                 if st.button("Promover cambio"):
-                    st.session_state.df = st.session_state['pivoteador_preview']
-                    del st.session_state['pivoteador_preview']
+                    st.session_state.df = st.session_state["pivoteador_preview"]
+                    del st.session_state["pivoteador_preview"]
                     st.success("Cambio promovido al frame principal.")
             with c2:
                 if st.button("Descartar vista previa"):
-                    del st.session_state['pivoteador_preview']
+                    del st.session_state["pivoteador_preview"]
                     st.info("Vista previa descartada.")
 
 # -------------------
 # Exportar CSV común
 # -------------------
-if 'df' in st.session_state and opcion != "Cargar / Exportar":
+if "df" in st.session_state and opcion != "Cargar / Exportar":
     st.sidebar.subheader("Exportar CSV")
     csv_bytes = st.session_state.df.to_csv(index=False).encode("utf-8")
-    nombre_salida = st.session_state.get('upload_file_name', 'exportado.csv')
+    nombre_salida = st.session_state.get("upload_file_name", "exportado.csv")
     st.sidebar.download_button(
-        "Descargar CSV",
-        data=csv_bytes,
-        file_name=nombre_salida,
-        mime="text/csv"
+        "Descargar CSV", data=csv_bytes, file_name=nombre_salida, mime="text/csv"
     )

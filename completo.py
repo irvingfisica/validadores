@@ -5,6 +5,7 @@ import hashlib
 from difflib import SequenceMatcher
 import time
 from collections import Counter
+from functools import partial
 
 
 # -------------------
@@ -538,6 +539,20 @@ elif opcion == "Editor de Valores":
                     "Selecciona la columna a editar", col_names, key="editor_columna"
                 )
 
+                # --- limpiar session_state si cambió de columna ---
+                prev_col_key = "editor_prev_col"
+                if (
+                    prev_col_key in st.session_state
+                    and st.session_state[prev_col_key] != col
+                ):
+                    old_col = st.session_state[prev_col_key]
+                    for k in list(st.session_state.keys()):
+                        if k.startswith(f"selector_{old_col}_") or k.startswith(
+                            f"text_{old_col}_"
+                        ):
+                            del st.session_state[k]
+                st.session_state[prev_col_key] = col
+
                 counts = df[col].value_counts().reset_index()
                 counts.columns = [col, "Frecuencia"]
 
@@ -576,29 +591,60 @@ elif opcion == "Editor de Valores":
             )
             edited = {}
 
+            def make_on_change(sel_key, txt_key):
+                def _on_change(sel_key=sel_key, txt_key=txt_key):
+                    st.session_state[txt_key] = st.session_state.get(
+                        sel_key, st.session_state.get(txt_key, "")
+                    )
+
+                return _on_change
+
             for i, row in counts.iterrows():
                 val = row[col]
                 freq = row["Frecuencia"]
                 options = [val] + suggestions.get(val, [])
 
+                # Claves estables basadas en hash del valor
+                key_id = hashlib.md5(str(val).encode("utf-8")).hexdigest()[:8]
+                selector_key = f"selector_{col}_{key_id}"
+                text_key = f"text_{col}_{key_id}"
+
                 c1, c2 = st.columns([2, 3])
                 with c1:
+                    default_index = 0
+                    if selector_key in st.session_state:
+                        try:
+                            default_index = options.index(
+                                st.session_state[selector_key]
+                            )
+                        except ValueError:
+                            default_index = 0
+
                     selected = st.selectbox(
                         f"{val} ({freq} veces)",
                         options,
-                        index=0,
-                        key=f"selector_{col}_{i}",
+                        index=default_index,
+                        key=selector_key,
+                        on_change=make_on_change(selector_key, text_key),
                     )
+
                 with c2:
+                    initial_text = st.session_state.get(text_key, selected)
                     new_val = st.text_input(
-                        "Editar valor", value=selected, key=f"text_{col}_{i}"
+                        "Editar valor", value=initial_text, key=text_key
                     )
+
                 edited[val] = new_val
 
             if st.button("Aplicar cambios", key="editor_aplicar"):
                 before = df[col].copy()
                 df[col] = df[col].map(lambda x: edited.get(x, x))
                 st.session_state.df = df
+
+                # Limpiar claves del estado
+                for k in list(st.session_state.keys()):
+                    if k.startswith(f"selector_{col}_") or k.startswith(f"text_{col}_"):
+                        del st.session_state[k]
 
                 # Recuento de cambios por valor
                 mask = before != df[col]

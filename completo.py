@@ -641,6 +641,38 @@ elif opcion == "Editor de Valores":
                 df[col] = df[col].map(lambda x: edited.get(x, x))
                 st.session_state.df = df
 
+                # --- RECONSTRUIR session_state PARA LA COLUMNA ACTUAL (no borrar) ---
+                # recalcular los valores actuales de la columna después del replace
+                counts_after = st.session_state.df[col].value_counts().reset_index()
+                counts_after.columns = [col, "Frecuencia"]
+
+                for i, row_after in counts_after.iterrows():
+                    val_after = row_after[col]
+                    # crear las mismas claves estables que usas en el loop de arriba
+                    key_id_after = hashlib.md5(
+                        str(val_after).encode("utf-8")
+                    ).hexdigest()[:8]
+                    selector_key_after = f"selector_{col}_{key_id_after}"
+                    text_key_after = f"text_{col}_{key_id_after}"
+
+                    # si no existen, inicializarlas con el valor actual (así quedan visibles tras rerun)
+                    if selector_key_after not in st.session_state:
+                        st.session_state[selector_key_after] = val_after
+                    # si el usuario había definido un reemplazo previo en 'edited', úsalo como text
+                    # (si no, deja el valor actual)
+                    desired_text = None
+                    # buscar si algún old_val en 'edited' fue reemplazado por val_after; si no, dejamos val_after
+                    # (esto protege el caso donde valores antiguos se transformaron en uno nuevo)
+                    for old_val, new_val in edited.items():
+                        if new_val == val_after:
+                            desired_text = new_val
+                            break
+                    if desired_text is None:
+                        desired_text = val_after
+
+                    if text_key_after not in st.session_state:
+                        st.session_state[text_key_after] = desired_text
+
                 # Limpiar claves del estado
                 for k in list(st.session_state.keys()):
                     if k.startswith(f"selector_{col}_") or k.startswith(f"text_{col}_"):

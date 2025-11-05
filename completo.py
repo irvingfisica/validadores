@@ -86,7 +86,7 @@ def transformar_a_numerica(serie: pd.Series) -> pd.Series:
         ["", "-", " ", "NA", "N/A", "ND", "nd", "*", "na", "nan", "null", "None"], pd.NA
     )
 
-    return pd.to_numeric(serie_limpia, errors="raise")
+    return pd.to_numeric(serie_limpia, errors="raise")  # type: ignore
 
 
 def transformar_a_numerica_coordenada(serie: pd.Series) -> pd.Series:
@@ -100,7 +100,7 @@ def transformar_a_numerica_coordenada(serie: pd.Series) -> pd.Series:
         ["", "-", " ", "NA", "N/A", "na", "nan", "null", "None"], 0.0
     )
 
-    return pd.to_numeric(serie_limpia, errors="raise")
+    return pd.to_numeric(serie_limpia, errors="raise")  # type: ignore
 
 
 def transformar_a_fecha(serie: pd.Series) -> pd.Series:

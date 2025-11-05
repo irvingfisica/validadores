@@ -15,20 +15,51 @@ def similar(a, b):
 
 
 def transformar_a_texto(serie: pd.Series) -> pd.Series:
-    return serie.fillna("sin dato").astype(str).str.strip()
+    return (
+        serie.fillna("sin dato")
+        .astype(str)
+        .str.strip()
+        .str.replace(r"\s+", " ", regex=True)
+        .str.replace(r"[\r\n]+", "; ", regex=True)
+    )
 
 
 def transformar_a_texto_minusculas(serie: pd.Series) -> pd.Series:
-    return serie.fillna("sin dato").astype(str).str.strip().str.lower()
+    return (
+        serie.fillna("sin dato")
+        .astype(str)
+        .str.strip()
+        .str.lower()
+        .str.replace(r"\s+", " ", regex=True)
+        .str.replace(r"[\r\n]+", "; ", regex=True)
+    )
 
 
 def transformar_a_texto_capitalizar(serie: pd.Series) -> pd.Series:
-    new_ser = serie.fillna("sin dato").astype(str).str.strip().str.title()
+    new_ser = (
+        serie.fillna("sin dato")
+        .astype(str)
+        .str.strip()
+        .str.replace(r"\s+", " ", regex=True)
+        .str.replace(r"[\r\n]+", "; ", regex=True)
+        .str.title()
+    )
     new_ser = new_ser.str.replace(" De ", " de ").str.replace(" Del ", " del ")
     new_ser = new_ser.str.replace(" Y ", " y ").str.replace(" El ", " el ")
     new_ser = new_ser.str.replace(" La ", " la ").str.replace(" A ", " a ")
     new_ser = new_ser.str.replace(" En ", " en ")
     return new_ser
+
+
+def transformar_a_texto_sin_guiones(serie: pd.Series) -> pd.Series:
+    return (
+        serie.fillna("sin dato")
+        .astype(str)
+        .str.strip()
+        .str.replace("_", " ")
+        .str.replace(r"\s+", " ", regex=True)
+        .str.replace(r"[\r\n]+", "; ", regex=True)
+    )
 
 
 def anonimizar(serie: pd.Series) -> pd.Series:
@@ -43,7 +74,12 @@ def anonimizar(serie: pd.Series) -> pd.Series:
 
 
 def transformar_a_numerica(serie: pd.Series) -> pd.Series:
-    serie_limpia = serie.astype(str).str.strip()
+    serie_limpia = (
+        serie.astype(str)
+        .str.strip()
+        .str.replace(r"\s+", " ", regex=True)
+        .str.replace(r"[\r\n]+", "; ", regex=True)
+    )
     serie_limpia = serie_limpia.str.replace(r"[\$,€]", "", regex=True)
     serie_limpia = serie_limpia.str.replace(",", "")
     serie_limpia = serie_limpia.replace(
@@ -54,7 +90,12 @@ def transformar_a_numerica(serie: pd.Series) -> pd.Series:
 
 
 def transformar_a_numerica_coordenada(serie: pd.Series) -> pd.Series:
-    serie_limpia = serie.astype(str).str.strip()
+    serie_limpia = (
+        serie.astype(str)
+        .str.strip()
+        .str.replace(r"\s+", " ", regex=True)
+        .str.replace(r"[\r\n]+", "; ", regex=True)
+    )
     serie_limpia = serie_limpia.replace(
         ["", "-", " ", "NA", "N/A", "na", "nan", "null", "None"], 0.0
     )
@@ -63,7 +104,12 @@ def transformar_a_numerica_coordenada(serie: pd.Series) -> pd.Series:
 
 
 def transformar_a_fecha(serie: pd.Series) -> pd.Series:
-    serie_limpia = serie.astype(str).str.strip()
+    serie_limpia = (
+        serie.astype(str)
+        .str.strip()
+        .str.replace(r"\s+", " ", regex=True)
+        .str.replace(r"[\r\n]+", "; ", regex=True)
+    )
     serie_limpia = serie_limpia.str.replace(r"[/.\s]", "-", regex=True)
 
     serie_limpia = serie_limpia.replace(
@@ -319,6 +365,7 @@ elif opcion == "Validador de Columnas":
                     "Tipo de datos:",
                     options=[
                         "texto",
+                        "texto sin guiones bajos",
                         "texto | minusculas",
                         "texto | capitalizado",
                         "numerica",
@@ -329,6 +376,7 @@ elif opcion == "Validador de Columnas":
                     ],
                     index=[
                         "texto",
+                        "texto sin guiones bajos",
                         "texto | minusculas",
                         "texto | capitalizado",
                         "numerica",
@@ -350,6 +398,8 @@ elif opcion == "Validador de Columnas":
                 try:
                     if conf["tipo"] == "texto":
                         df_trans[col] = transformar_a_texto(df[col])
+                    elif conf["tipo"] == "texto sin guiones bajos":
+                        df_trans[col] = transformar_a_texto_sin_guiones(df[col])
                     elif conf["tipo"] == "texto | minusculas":
                         df_trans[col] = transformar_a_texto_minusculas(df[col])
                     elif conf["tipo"] == "texto | capitalizado":

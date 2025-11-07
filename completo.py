@@ -1,10 +1,11 @@
-import streamlit as st
-import re
-import pandas as pd
 import hashlib
-from difflib import SequenceMatcher
+import re
 import time
 from collections import Counter
+from difflib import SequenceMatcher
+
+import pandas as pd
+import streamlit as st
 
 
 # -------------------
@@ -495,7 +496,7 @@ elif opcion == "Editor de Valores":
         else:
             # --- FILTRO por número de valores únicos ---
             porcentaje_limite = 0.05  # 5% del total de filas
-            limite_absoluto = 300
+            limite_absoluto = 600
             max_unicos = min(int(df.shape[0] * porcentaje_limite), limite_absoluto)
             if df.shape[0] < limite_absoluto:
                 max_unicos = df.shape[0]

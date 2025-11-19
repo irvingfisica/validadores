@@ -226,7 +226,7 @@ if opcion == "Cargar CSV":
         st.text_input(
             "Encoding del archivo:",
             key="encoding",
-            help="Si el archivo tiene caracteres extraños, prueba con cp1252, cp850 o Latin1.",
+            help="Si el archivo tiene caracteres extraños, prueba con cp1252, cp850, ISO-8859-1 o Latin1.",
             on_change=lambda: st.session_state.update({"_reload_now": True}),
         )
 

@@ -74,6 +74,25 @@ def anonimizar(serie: pd.Series) -> pd.Series:
     )
 
 
+def invertir_comapunto_numerica(serie: pd.Series) -> pd.Series:
+    serie_limpia = (
+        serie.astype(str)
+        .str.strip()
+        .str.replace(".", "-")
+        .str.replace(",", ".")
+        .str.replace("-", ",")
+        .str.replace(r"\s+", " ", regex=True)
+        .str.replace(r"[\r\n]+", "; ", regex=True)
+    )
+    serie_limpia = serie_limpia.str.replace(r"[\$,€]", "", regex=True)
+    serie_limpia = serie_limpia.str.replace(",", "")
+    serie_limpia = serie_limpia.replace(
+        ["", "-", " ", "NA", "N/A", "ND", "nd", "*", "na", "nan", "null", "None"], pd.NA
+    )
+
+    return pd.to_numeric(serie_limpia, errors="raise")
+
+
 def transformar_a_numerica(serie: pd.Series) -> pd.Series:
     serie_limpia = (
         serie.astype(str)
@@ -370,6 +389,7 @@ elif opcion == "Validador de Columnas":
                         "texto | minusculas",
                         "texto | capitalizado",
                         "numerica",
+                        "numerica | invertir comas y puntos",
                         "numerica | coordenada",
                         "fecha",
                         "anonimizar",
@@ -381,6 +401,7 @@ elif opcion == "Validador de Columnas":
                         "texto | minusculas",
                         "texto | capitalizado",
                         "numerica",
+                        "numerica | invertir comas y puntos",
                         "numerica | coordenada",
                         "fecha",
                         "anonimizar",
@@ -407,6 +428,8 @@ elif opcion == "Validador de Columnas":
                         df_trans[col] = transformar_a_texto_capitalizar(df[col])
                     elif conf["tipo"] == "numerica":
                         df_trans[col] = transformar_a_numerica(df[col])
+                    elif conf["tipo"] == "numerica | invertir comas y puntos":
+                        df_trans[col] = invertir_comapunto_numerica(df[col])
                     elif conf["tipo"] == "numerica | coordenada":
                         df_trans[col] = transformar_a_numerica_coordenada(df[col])
                     elif conf["tipo"] == "fecha":

@@ -256,7 +256,7 @@ if opcion == "Cargar CSV":
             try:
                 archivo_obj.seek(0)
                 df_local = pd.read_csv(archivo_obj, encoding=encoding_val, index_col=False)
-                df_local = df_local.dropna(how="all").dropna(how="all", axis=1)
+                df_local = df_local.dropna(how="all")
 
                 # Resetear estado pero conservar encoding y upload_file
                 for k in list(st.session_state.keys()):

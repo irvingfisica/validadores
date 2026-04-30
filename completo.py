@@ -593,7 +593,10 @@ elif opcion == "Editor de Valores":
             st.markdown(
                 "Los valores en rojo son similares a otros en la columna, revísalos:"
             )
-            st.dataframe(counts.style.applymap(highlight_similar, subset=[col]))
+            st.dataframe(
+                counts.style.map(highlight_similar, subset=[col]),
+                use_container_width=True
+            )
 
             st.markdown(
                 "### Corrige los valores que desees cambiar, puedes usar otros valores o escribir un nuevo valor"

@@ -180,7 +180,7 @@ def sugerir_nombre(columna):
 
 
 def inferir_tipo(serie: pd.Series):
-    dtype = df[col].dtype
+    dtype = serie.dtype
     if pd.api.types.is_numeric_dtype(dtype):
         sugerido = "numerica"
     elif pd.api.types.is_datetime64_any_dtype(dtype):
@@ -509,10 +509,10 @@ elif opcion == "Editor de Valores":
 
         # Detectar columnas de texto
         all_text_columns = [
-            c
-            for c in df.columns
-            if df[c].dtype == object or str(df[c].dtype).startswith("string")
-        ]
+            c for c in df.columns
+            if pd.api.types.is_object_dtype(df[c]) 
+            or pd.api.types.is_string_dtype(df[c])
+            ]
 
         if not all_text_columns:
             st.warning("No hay columnas de texto en el CSV")
